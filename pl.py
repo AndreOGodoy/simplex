@@ -64,6 +64,9 @@ class PL:
         return output_str
 
     def into_equality_form(self) -> 'PL':
+        if self.restr_type is RestrType.EQ:
+            return self
+
         new_obj_func = np.append(self.obj_func, [0]*self.n_rest)
         if self.obj_func_type is ObjFuncType.MIN:
             new_obj_func *= -1
