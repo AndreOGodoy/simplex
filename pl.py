@@ -48,6 +48,7 @@ class PL:
     def get_tableaux(self) -> str:
         output_str = ''
         for c in self.obj_func.astype(float):
+            c = c * -1 + 0
             output_str += f'{c:>5.2f} '
 
         output_str += f' | {str(self.optimal_value) : >5}\n'
