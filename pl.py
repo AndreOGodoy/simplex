@@ -19,7 +19,7 @@ class ObjFuncType(Enum):
 
 
 class PL:
-    def __init__(self, n_var: int, n_rest: int,
+    def __init__(self, n_rest: int, n_var: int,
                  obj_func: np.ndarray, restr: np.ndarray,
                  restr_type: RestrType = RestrType.LESS_EQ,
                  obj_func_type: ObjFuncType = ObjFuncType.MAX):
@@ -77,7 +77,7 @@ class PL:
 
         new_n_var = self.n_var + self.n_rest
 
-        new_pl = PL(new_n_var, self.n_rest, new_obj_func, new_restr, RestrType.EQ, ObjFuncType.MAX)
+        new_pl = PL(self.n_rest, new_n_var, new_obj_func, new_restr, RestrType.EQ, ObjFuncType.MAX)
         return new_pl
 
     def pivot_self_by(self, row_idx: int, col_idx: int):
