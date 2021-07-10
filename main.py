@@ -26,13 +26,13 @@ def read_input(input_file: str) -> PL:
 def main():
     pl = read_input(INPUT_FILE)
     print(pl)
-    print('Original: ', pl.get_tableaux(), sep='\n')
+    print('Original: ', pl.tableaux(), sep='\n')
 
     pl_eq_form = pl.into_equality_form()
-    print('FPI: ', pl_eq_form.get_tableaux(), sep='\n')
+    print('FPI: ', pl_eq_form.tableaux(), sep='\n')
 
     aux_pl = pl_eq_form.get_aux_pl()
-    print('Auxiliar: ', aux_pl.get_tableaux(), sep='\n')
+    print('Auxiliar: ', aux_pl.tableaux(), sep='\n')
 
 
 if __name__ == '__main__':

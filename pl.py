@@ -45,7 +45,7 @@ class PL:
         output_str += 'x >= 0\n'
         return output_str
 
-    def get_tableaux(self) -> str:
+    def tableaux(self) -> str:
         output_str = ''
         for c in self.obj_func.astype(float):
             c = c * -1 + 0
