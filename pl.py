@@ -101,5 +101,15 @@ class PL:
     def to_canonical(self):
         raise NotImplementedError
 
-    def make_aux_pl(self):
-        raise NotImplementedError
+    def get_aux_pl(self) -> 'PL':
+        pl_eq_form = self.into_equality_form()
+        n_ones = pl_eq_form.n_rest
+
+        obj_func = np.zeros(pl_eq_form.obj_func.shape[0] + n_ones)
+        obj_func[-n_ones:] = -1
+
+        restr = np.hstack((pl_eq_form.restr, np.zeros((n_ones, n_ones))))
+        restr[:, -1] = restr[:, pl_eq_form.n_var]
+        restr[:, pl_eq_form.n_var: -1] = np.identity(pl_eq_form.n_rest)
+
+        return PL(pl_eq_form.n_rest, pl_eq_form.n_var + n_ones, obj_func, restr, RestrType.EQ)
