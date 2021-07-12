@@ -19,8 +19,8 @@ class ObjFuncType(Enum):
     MIN = auto(),
 
 
-def idx_first(values: np.ndarray) -> Optional[int]:
-    indexes = np.where(values > 0)
+def idx_first(values: np.ndarray, cond_arr: np.ndarray) -> Optional[int]:
+    indexes = np.where(cond_arr)
     return indexes[0][0] if indexes[0].size > 0 else None
 
 class PL:
