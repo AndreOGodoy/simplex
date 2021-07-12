@@ -23,6 +23,11 @@ def idx_first(values: np.ndarray, cond_arr: np.ndarray) -> Optional[int]:
     indexes = np.where(cond_arr)
     return indexes[0][0] if indexes[0].size > 0 else None
 
+
+def safe_divide(a: np.ndarray, b: np.ndarray, zero_div_val: int = -1):
+    return np.divide(a, b, np.full_like(a, zero_div_val), where=b != 0)
+
+
 class PL:
     def __init__(self, n_rest: int, n_var: int,
                  obj_func: np.ndarray, restr: np.ndarray,
