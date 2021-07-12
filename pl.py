@@ -113,9 +113,35 @@ class PL:
         self.optimal_value -= ratio * self.restr[row_idx, -1]
 
     def primal_simplex(self):
+        canonical = self.into_canonical()
+
+        column_idx = idx_first(self.obj_func > 0)
+        print(self.obj_func)
+        if not column_idx:
+            # TODO: Completar condição
+            raise NotImplementedError
+
+        ratios = self.restr[:, -1] / self.restr[:, column_idx]
+        print(ratios)
+
         raise NotImplementedError
 
-    def to_canonical(self):
+    def into_canonical(self, inplace: bool = False, is_aux_pl: bool = False):
+
+        # Caso seja uma PL Auxiliar
+        if is_aux_pl:
+            canonical = self
+            if not inplace:
+                canonical = PL(self.n_rest, self.n_var, self.obj_func.copy(),
+                               self.restr.copy(), self.restr_type, self.obj_func_type)
+
+            for i in range(self.n_rest):
+                canonical.pivot_self_by(i, self.n_var - self.n_rest + i)
+
+            if not inplace:
+                return canonical
+            return
+
         raise NotImplementedError
 
     def get_aux_pl(self) -> 'PL':
