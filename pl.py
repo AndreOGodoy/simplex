@@ -68,11 +68,15 @@ class PL:
 
         return output_str
 
-    def into_equality_form(self) -> 'PL':
-        if self.restr_type is RestrType.EQ:
-            return self
+    def into_equality_form(self, inplace: bool = False) -> Optional['PL']:
+        if self.restr_type is RestrType.EQ and inplace:
+            return
+        elif self.restr_type is RestrType.EQ and not inplace:
+            return PL(self.n_rest, self.n_var, self.obj_func.copy(), self.restr.copy(),
+                      self.restr_type, self.obj_func_type)
 
-        new_obj_func = np.append(self.obj_func, [0]*self.n_rest)
+        new_obj_func = np.append(self.obj_func, [0] * self.n_rest)
+
         if self.obj_func_type is ObjFuncType.MIN:
             new_obj_func *= -1
 
@@ -81,6 +85,14 @@ class PL:
         new_restr[:, self.n_var: -1] = np.identity(self.n_rest)
 
         new_n_var = self.n_var + self.n_rest
+
+        if inplace:
+            self.restr = new_restr
+            self.n_var = new_n_var
+            self.obj_func = new_obj_func
+            self.restr_type = RestrType.EQ
+            self.obj_func_type = ObjFuncType.MAX
+            return
 
         new_pl = PL(self.n_rest, new_n_var, new_obj_func, new_restr, RestrType.EQ, ObjFuncType.MAX)
         return new_pl
