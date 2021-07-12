@@ -1,6 +1,7 @@
 from enum import Enum, auto
 import numpy as np
-from typing import *
+from typing import Optional
+
 
 class PLType(Enum):
     OPTIMAL = auto(),
@@ -17,6 +18,10 @@ class ObjFuncType(Enum):
     MAX = auto(),
     MIN = auto(),
 
+
+def idx_first(values: np.ndarray) -> Optional[int]:
+    indexes = np.where(values > 0)
+    return indexes[0][0] if indexes[0].size > 0 else None
 
 class PL:
     def __init__(self, n_rest: int, n_var: int,
