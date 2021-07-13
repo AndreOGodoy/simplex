@@ -119,17 +119,23 @@ class PL:
         self.obj_func -= ratio * self.restr[row_idx, :-1]
         self.optimal_value -= ratio * self.restr[row_idx, -1]
 
-    def primal_simplex(self):
-        canonical = self.into_canonical()
+    def primal_simplex(self, is_aux_pl: bool = False):
+        canonical = self.into_canonical(is_aux_pl=is_aux_pl)
 
-        column_idx = idx_first(self.obj_func > 0)
-        print(self.obj_func)
-        if not column_idx:
-            # TODO: Completar condição
-            raise NotImplementedError
+        while True:
+            possible_columns = np.where(canonical.obj_func > 0)[0]
+            if possible_columns.size == 0:
+                raise NotImplementedError
 
-        ratios = self.restr[:, -1] / self.restr[:, column_idx]
-        print(ratios)
+            column = possible_columns[0]
+            ratios = get_simplex_primal_ratio(self.restr[:, -1], self.restr[:, column])
+            if np.all(ratios == np.inf):
+                raise NotImplementedError
+
+            min_ratio_idx = np.where(ratios == np.min(ratios))[0][0]
+            line = min_ratio_idx
+
+            canonical.pivot_self_by(line, column)
 
         raise NotImplementedError
 
