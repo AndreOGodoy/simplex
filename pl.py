@@ -24,8 +24,10 @@ def idx_first(values: np.ndarray, cond_arr: np.ndarray) -> Optional[int]:
     return indexes[0][0] if indexes[0].size > 0 else None
 
 
-def safe_divide(a: np.ndarray, b: np.ndarray, zero_div_val: int = -1):
-    return np.divide(a, b, np.full_like(a, zero_div_val), where=b != 0)
+def get_simplex_primal_ratio(a: np.ndarray, b: np.ndarray):
+    divided = np.array([a_v / b_v if b_v > 0 else np.inf for a_v, b_v in zip(a, b)])
+    return divided
+
 
 
 class PL:
