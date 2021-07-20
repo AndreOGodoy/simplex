@@ -9,6 +9,17 @@ class PLType(Enum):
     UNLIMITED = auto()
 
 
+class SimplexReturn:
+    def __init__(self, pl_type: PLType,
+                 certificate: np.ndarray,
+                 optimal_value: Optional[float] = None,
+                 solution: Optional[np.ndarray] = None):
+        self.pl_type = pl_type
+        self.certificate = certificate
+        self.optimal_value = optimal_value
+        self.solution = solution
+
+
 class RestrType(Enum):
     LESS_EQ = auto(),
     EQ = auto()
