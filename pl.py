@@ -195,12 +195,17 @@ class PL:
         obj_func = np.zeros(pl_eq_form.obj_func.shape[0] + n_ones)
         obj_func[-n_ones:] = -1
 
-        restr = np.hstack((pl_eq_form.restr, np.zeros((n_ones, n_ones))))
-        restr[:, -1] = restr[:, pl_eq_form.n_var]
-        restr[:, pl_eq_form.n_var: -1] = np.identity(pl_eq_form.n_rest)
+        restr = pl_eq_form.restr
 
         for line_idx, b in enumerate(restr[:, -1]):
             if b < 0:
                 restr[line_idx] *= -1
+
+        restr = np.hstack((restr, np.zeros((n_ones, n_ones))))
+        restr[:, -1] = restr[:, pl_eq_form.n_var]
+        restr[:, pl_eq_form.n_var: -1] = np.identity(pl_eq_form.n_rest)
+
+        restr = restr + 0
+        obj_func = obj_func + 0
 
         return PL(pl_eq_form.n_rest, pl_eq_form.n_var + n_ones, obj_func, restr, RestrType.EQ)
