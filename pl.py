@@ -168,4 +168,8 @@ class PL:
         restr[:, -1] = restr[:, pl_eq_form.n_var]
         restr[:, pl_eq_form.n_var: -1] = np.identity(pl_eq_form.n_rest)
 
+        for line_idx, b in enumerate(restr[:, -1]):
+            if b < 0:
+                restr[line_idx] *= -1
+
         return PL(pl_eq_form.n_rest, pl_eq_form.n_var + n_ones, obj_func, restr, RestrType.EQ)
