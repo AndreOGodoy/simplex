@@ -139,8 +139,6 @@ class PL:
         while True:
             possible_columns = np.where(canonical.obj_func > 0)[0]
             if possible_columns.size == 0:
-                print("Ótima")
-                print(canonical.tableaux())
                 return SimplexReturn(pl_type=PLType.OPTIMAL,
                                      certificate=np.array([0, 0, 0]),
                                      optimal_value=canonical.optimal_value,
