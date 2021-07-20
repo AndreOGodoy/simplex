@@ -129,8 +129,12 @@ class PL:
         self.obj_func -= ratio * self.restr[row_idx, :-1]
         self.optimal_value -= ratio * self.restr[row_idx, -1]
 
-    def primal_simplex(self, is_aux_pl: bool = False) -> SimplexReturn:
-        canonical = self.into_canonical(is_aux_pl=is_aux_pl)
+        self.restr = self.restr + 0
+        self.obj_func = self.obj_func + 0
+
+
+    def primal_simplex(self, base: Optional[np.ndarray] = None, is_aux_pl: bool = False) -> SimplexReturn:
+        canonical = self.into_canonical(base=base, is_aux_pl=is_aux_pl)
 
         while True:
             possible_columns = np.where(canonical.obj_func > 0)[0]
