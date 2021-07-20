@@ -40,7 +40,6 @@ def get_simplex_primal_ratio(a: np.ndarray, b: np.ndarray):
     return divided
 
 
-
 class PL:
     def __init__(self, n_rest: int, n_var: int,
                  obj_func: np.ndarray, restr: np.ndarray,
@@ -130,18 +129,24 @@ class PL:
         self.obj_func -= ratio * self.restr[row_idx, :-1]
         self.optimal_value -= ratio * self.restr[row_idx, -1]
 
-    def primal_simplex(self, is_aux_pl: bool = False):
+    def primal_simplex(self, is_aux_pl: bool = False) -> SimplexReturn:
         canonical = self.into_canonical(is_aux_pl=is_aux_pl)
 
         while True:
             possible_columns = np.where(canonical.obj_func > 0)[0]
             if possible_columns.size == 0:
-                raise NotImplementedError
+                print("Ótima")
+                print(canonical.tableaux())
+                return SimplexReturn(pl_type=PLType.OPTIMAL,
+                                     certificate=np.array([0, 0, 0]),
+                                     optimal_value=canonical.optimal_value,
+                                     solution=canonical.restr[:, -1])
 
             column = possible_columns[0]
             ratios = get_simplex_primal_ratio(self.restr[:, -1], self.restr[:, column])
             if np.all(ratios == np.inf):
-                raise NotImplementedError
+                return SimplexReturn(pl_type=PLType.UNLIMITED,
+                                     certificate=np.array([0, 0, 0]))
 
             min_ratio_idx = np.where(ratios == np.min(ratios))[0][0]
             line = min_ratio_idx
