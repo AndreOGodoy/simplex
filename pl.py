@@ -143,7 +143,7 @@ class PL:
                                      solution=canonical.restr[:, -1])
 
             column = possible_columns[0]
-            ratios = get_simplex_primal_ratio(self.restr[:, -1], self.restr[:, column])
+            ratios = get_simplex_primal_ratio(canonical.restr[:, -1], canonical.restr[:, column])
             if np.all(ratios == np.inf):
                 return SimplexReturn(pl_type=PLType.UNLIMITED,
                                      certificate=np.array([0, 0, 0]))
