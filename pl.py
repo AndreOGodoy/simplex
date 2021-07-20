@@ -155,9 +155,13 @@ class PL:
 
         raise NotImplementedError
 
-    def into_canonical(self, inplace: bool = False, is_aux_pl: bool = False):
+    def into_canonical(self, base: Optional[np.ndarray] = None, inplace: bool = False, is_aux_pl: bool = False):
+        if base is not None and is_aux_pl:
+            raise ValueError("Base inicial fornecida para PL Auxiliar")
 
-        # Caso seja uma PL Auxiliar
+        elif base is not None and base.ndim > 1:
+            raise ValueError("'base' deve ser array unidimensional")
+
         if is_aux_pl:
             canonical = self
             if not inplace:
