@@ -175,7 +175,18 @@ class PL:
                 return canonical
             return
 
-        raise NotImplementedError
+        canonical = self
+        if not inplace:
+            canonical = PL(self.n_rest, self.n_var, self.obj_func.copy(), self.restr.copy(), self.restr_type,
+                           self.obj_func_type)
+
+        assert base is not None
+        for line_idx, base_idx in enumerate(base):
+            canonical.pivot_self_by(line_idx, base_idx)
+
+        if not inplace:
+            return canonical
+        return
 
     def get_aux_pl(self) -> 'PL':
         pl_eq_form = self.into_equality_form()
