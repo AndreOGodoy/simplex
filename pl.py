@@ -1,6 +1,6 @@
 from enum import Enum, auto
 import numpy as np
-from typing import Optional
+from typing import Optional, Tuple
 
 
 class PLType(Enum):
@@ -13,11 +13,13 @@ class SimplexReturn:
     def __init__(self, pl_type: PLType,
                  certificate: np.ndarray,
                  optimal_value: Optional[float] = None,
-                 solution: Optional[np.ndarray] = None):
+                 solution: Optional[np.ndarray] = None,
+                 base: Optional[np.ndarray] = None):
         self.pl_type = pl_type
         self.certificate = certificate
         self.optimal_value = optimal_value
         self.solution = solution
+        self.base = base
 
 
 class RestrType(Enum):
@@ -38,6 +40,29 @@ def idx_first(values: np.ndarray, cond_arr: np.ndarray) -> Optional[int]:
 def get_simplex_primal_ratio(a: np.ndarray, b: np.ndarray):
     divided = np.array([a_v / b_v if b_v > 0 else np.inf for a_v, b_v in zip(a, b)])
     return divided
+
+
+def get_basic_solution(restr: np.ndarray, b: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
+    identity = np.identity(restr.shape[0])
+    solution = np.zeros(restr.shape[1])
+
+    indexes = []
+    order = []
+
+    for col_idx, col in enumerate(restr.T):
+        result = np.where((identity == col).all(axis=1))[0]
+        if result.size != 0:
+            solution[col_idx] = b[result[0]]
+
+            indexes.append(col_idx)
+            order.append(result[0])
+        else:
+            solution[col_idx] = 0
+
+    indexes = np.array(indexes)
+    order = np.array(order)
+    base = indexes[order]
+    return solution, np.unique(base)
 
 
 class PL:
@@ -132,17 +157,18 @@ class PL:
         self.restr = self.restr + 0
         self.obj_func = self.obj_func + 0
 
-
     def primal_simplex(self, base: Optional[np.ndarray] = None, is_aux_pl: bool = False) -> SimplexReturn:
         canonical = self.into_canonical(base=base, is_aux_pl=is_aux_pl)
 
         while True:
             possible_columns = np.where(canonical.obj_func > 0)[0]
             if possible_columns.size == 0:
+                solution, base = get_basic_solution(canonical.restr[:, :-1], canonical.restr[:, -1])
                 return SimplexReturn(pl_type=PLType.OPTIMAL,
                                      certificate=np.array([0, 0, 0]),
                                      optimal_value=canonical.optimal_value,
-                                     solution=canonical.restr[:, -1])
+                                     solution=solution,
+                                     base=base)
 
             column = possible_columns[0]
             ratios = get_simplex_primal_ratio(canonical.restr[:, -1], canonical.restr[:, column])
