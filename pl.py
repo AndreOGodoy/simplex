@@ -181,8 +181,6 @@ class PL:
 
             canonical.pivot_self_by(line, column)
 
-        raise NotImplementedError
-
     def into_canonical(self, base: Optional[np.ndarray] = None, inplace: bool = False, is_aux_pl: bool = False):
         if base is not None and is_aux_pl:
             raise ValueError("Base inicial fornecida para PL Auxiliar")
