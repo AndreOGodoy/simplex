@@ -37,20 +37,18 @@ def main():
     print('Auxiliar: ', aux_pl.tableaux(), sep='\n')
 
     response = aux_pl.primal_simplex(is_aux_pl=True)
-    print(response.pl_type, response.certificate, response.optimal_value, response.solution)
+    print(response.pl_type, response.optimal_value, response.solution, response.base)
 
     if response.optimal_value != 0:
-        print("A PL Original é inviável")
+        print("A PL original é inviável")
         sys.exit(0)
 
-    base = np.where(response.solution > 0)[0]
-    print('Base: ', base)
+    base = response.base[response.base <= pl_eq_form.n_var]
 
-    canonical_pl = pl_eq_form.into_canonical(base=base)
-    print('Original Canônica: ', canonical_pl.tableaux(), sep='\n')
+    response_2 = pl_eq_form.primal_simplex(base=base)
 
-    response_2 = canonical_pl.primal_simplex(base=base)
-    print(response_2.pl_type, response_2.certificate, response_2.optimal_value, response_2.solution)
+    solution = response_2.solution[:pl.n_var] if response_2.solution is not None else None
+    print(response_2.pl_type, response_2.optimal_value, solution, response_2.base)
 
 
 if __name__ == '__main__':
