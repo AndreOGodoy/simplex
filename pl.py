@@ -79,6 +79,9 @@ class PL:
         self.restr = restr
         self.restr_type = restr_type
 
+        self.op_reg = np.identity(n_rest, dtype=float)
+        self.op_reg_c = np.zeros(n_rest, dtype=float)
+
         self.optimal_value = 0.0
 
     def __str__(self) -> str:
@@ -94,7 +97,10 @@ class PL:
 
     def tableaux(self) -> str:
         output_str = ''
-        for c in self.obj_func.astype(float):
+        for idx, c in enumerate(np.hstack((self.op_reg_c, self.obj_func))):
+            if idx == self.n_rest:
+                output_str += ' | '
+
             c = c * -1 + 0
             output_str += f'{c:>5.2f} '
 
@@ -102,10 +108,14 @@ class PL:
         output_str += '----------' * self.n_var + '\n'
 
         for i in range(self.n_rest):
-            for j in range(self.n_var + 1):
-                if j == self.n_var:
+            for j in range(self.n_var + 1 + self.n_rest):
+                if j == self.n_rest or j == self.n_var + self.n_rest:
                     output_str += ' | '
-                output_str += f'{self.restr[i, j]:>5.2f} '
+                if j >= self.n_rest:
+                    output_str += f'{self.restr[i, j - self.n_rest]:>5.2f} '
+                else:
+                    output_str += f'{self.op_reg[i, j]:>5.2f} '
+
             output_str += '\n'
 
         return output_str
@@ -148,10 +158,12 @@ class PL:
                 continue
 
             ratio = row[col_idx] / pivot
+            self.op_reg[idx] -= ratio * self.op_reg[row_idx, :]
             self.restr[idx] -= ratio * self.restr[row_idx, :]
 
         ratio = self.obj_func[col_idx] / pivot
         self.obj_func -= ratio * self.restr[row_idx, :-1]
+        self.op_reg_c -= ratio * self.op_reg[row_idx]
         self.optimal_value -= ratio * self.restr[row_idx, -1]
 
         self.restr = self.restr + 0
@@ -165,7 +177,7 @@ class PL:
             if possible_columns.size == 0:
                 solution, base = get_basic_solution(canonical.restr[:, :-1], canonical.restr[:, -1])
                 return SimplexReturn(pl_type=PLType.OPTIMAL,
-                                     certificate=np.array([0, 0, 0]),
+                                     certificate=canonical.op_reg_c,
                                      optimal_value=canonical.optimal_value,
                                      solution=solution,
                                      base=base)
