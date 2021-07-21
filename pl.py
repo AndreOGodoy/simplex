@@ -217,23 +217,25 @@ class PL:
         return
 
     def get_aux_pl(self) -> 'PL':
-        pl_eq_form = self.into_equality_form()
-        n_ones = pl_eq_form.n_rest
+        if self.restr_type is not RestrType.EQ:
+            raise ValueError("A PL deve estar em forma de igualdades antes de se obter sua auxiliar")
 
-        obj_func = np.zeros(pl_eq_form.obj_func.shape[0] + n_ones)
+        n_ones = self.n_rest
+
+        obj_func = np.zeros(self.obj_func.shape[0] + n_ones)
         obj_func[-n_ones:] = -1
 
-        restr = pl_eq_form.restr
+        restr = self.restr
 
         for line_idx, b in enumerate(restr[:, -1]):
             if b < 0:
                 restr[line_idx] *= -1
 
         restr = np.hstack((restr, np.zeros((n_ones, n_ones))))
-        restr[:, -1] = restr[:, pl_eq_form.n_var]
-        restr[:, pl_eq_form.n_var: -1] = np.identity(pl_eq_form.n_rest)
+        restr[:, -1] = restr[:, self.n_var]
+        restr[:, self.n_var: -1] = np.identity(self.n_rest)
 
         restr = restr + 0
         obj_func = obj_func + 0
 
-        return PL(pl_eq_form.n_rest, pl_eq_form.n_var + n_ones, obj_func, restr, RestrType.EQ)
+        return PL(self.n_rest, self.n_var + n_ones, obj_func, restr, RestrType.EQ)
