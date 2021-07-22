@@ -69,7 +69,8 @@ class PL:
     def __init__(self, n_rest: int, n_var: int,
                  obj_func: np.ndarray, restr: np.ndarray,
                  restr_type: RestrType = RestrType.LESS_EQ,
-                 obj_func_type: ObjFuncType = ObjFuncType.MAX):
+                 obj_func_type: ObjFuncType = ObjFuncType.MAX,
+                 op_reg: Optional[np.ndarray] = None):
         self.n_var = n_var
         self.n_rest = n_rest
 
@@ -79,7 +80,11 @@ class PL:
         self.restr = restr
         self.restr_type = restr_type
 
-        self.op_reg = np.identity(n_rest, dtype=float)
+        if op_reg is None:
+            self.op_reg = np.identity(n_rest, dtype=float)
+        else:
+            self.op_reg = op_reg
+
         self.op_reg_c = np.zeros(n_rest, dtype=float)
 
         self.optimal_value = 0.0
