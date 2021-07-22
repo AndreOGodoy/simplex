@@ -263,31 +263,45 @@ class PL:
         return pl
 
     def solve(self, debug_inplace: bool = False) -> SimplexReturn:
+        original_n_var = self.n_var
+
         if debug_inplace:
-            pl_n_var = self.n_var
             self.into_equality_form(inplace=True)
-            aux = self.get_aux_pl()
-            response = aux.primal_simplex(is_aux_pl=True)
+            pl_eq = self
+        else:
+            pl_eq = self.into_equality_form()
 
-            if response.optimal_value != 0:
-                return SimplexReturn(PLType.INVIABLE,
-                                     response.certificate)
+        aux = pl_eq.get_aux_pl()
+        response = aux.primal_simplex(is_aux_pl=True)
 
-            base = response.base[response.base <= self.n_var]
-            if base.size < self.n_rest:
-                columns = np.array(range(self.n_var))
-                columns_not_in_base = np.setdiff1d(np.union1d(columns, base), np.intersect1d(columns, base))
-                first_possible_idx = idx_first(self.obj_func[columns_not_in_base] >= 0)
-                first_possible = columns_not_in_base[first_possible_idx]
-                base += first_possible
+        if response.optimal_value != 0:
+            return SimplexReturn(PLType.INVIABLE,
+                                 response.certificate)
 
+        base = response.base[response.base <= pl_eq.n_var]
+
+        if base.size < pl_eq.n_rest:
+            columns = np.array(range(pl_eq.n_var))
+            columns_not_in_base = np.setdiff1d(np.union1d(columns, base), np.intersect1d(columns, base))
+
+            if debug_inplace:
+                pl_eq = self
+            first_possible_idx = idx_first(pl_eq.obj_func[columns_not_in_base] >= 0)
+
+            first_possible = columns_not_in_base[first_possible_idx]
+            base += first_possible
+
+        if debug_inplace:
             response_2 = self.primal_simplex(base=base)
-            solution = response_2.solution[:pl_n_var] if response_2.solution is not None else None
-            return SimplexReturn(response_2.pl_type,
-                                 response_2.certificate[:pl_n_var],
-                                 response_2.optimal_value,
-                                 solution,
-                                 base)
+        else:
+            response_2 = pl_eq.primal_simplex(base=base)
+
+        solution = response_2.solution[:original_n_var] if response_2.solution is not None else None
+        return SimplexReturn(response_2.pl_type,
+                             response_2.certificate[:original_n_var],
+                             response_2.optimal_value,
+                             solution,
+                             base)
 
     def __unlimited_certificate(self) -> np.ndarray:
         certificate = np.zeros(self.n_var)
