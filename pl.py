@@ -32,7 +32,7 @@ class ObjFuncType(Enum):
     MIN = auto(),
 
 
-def idx_first(values: np.ndarray, cond_arr: np.ndarray) -> Optional[int]:
+def idx_first(cond_arr: np.ndarray) -> Optional[int]:
     indexes = np.where(cond_arr)
     return indexes[0][0] if indexes[0].size > 0 else None
 
