@@ -154,29 +154,30 @@ class PL:
         new_pl = PL(self.n_rest, new_n_var, new_obj_func, new_restr, RestrType.EQ, ObjFuncType.MAX)
         return new_pl
 
-    def pivot_self_by(self, row_idx: int, col_idx: int):
+    def pivot_self_by(self, row_idx: int, col_idx: int, special_pivot: bool = False):
+        self.op_reg[row_idx, :] = self.op_reg[row_idx, :] / self.restr[row_idx, col_idx]
         self.restr[row_idx, :] = self.restr[row_idx, :] / self.restr[row_idx, col_idx]
-        pivot = self.restr[row_idx, col_idx]
 
+        pivot = self.restr[row_idx, col_idx]
         for idx, row in enumerate(self.restr):
             if idx == row_idx:
                 continue
 
             ratio = row[col_idx] / pivot
-            self.op_reg[idx] -= ratio * self.op_reg[row_idx, :]
-            self.restr[idx] -= ratio * self.restr[row_idx, :]
+
+            self.restr[idx] -= ratio * self.restr[row_idx, :] + 0
+            self.op_reg[idx] -= ratio * self.op_reg[row_idx, :] + 0
 
         ratio = self.obj_func[col_idx] / pivot
-        self.obj_func -= ratio * self.restr[row_idx, :-1]
-        self.op_reg_c -= ratio * self.op_reg[row_idx]
-        self.optimal_value -= ratio * self.restr[row_idx, -1]
+        self.obj_func -= ratio * self.restr[row_idx, :-1] + 0
+        self.op_reg_c -= ratio * self.op_reg[row_idx] + 0
+        self.optimal_value -= ratio * self.restr[row_idx, -1] + 0
 
         self.restr = self.restr + 0
         self.obj_func = self.obj_func + 0
 
     def primal_simplex(self, base: Optional[np.ndarray] = None, is_aux_pl: bool = False) -> SimplexReturn:
         canonical = self.into_canonical(base=base, is_aux_pl=is_aux_pl)
-
         while True:
             possible_columns = np.where(canonical.obj_func > 0)[0]
             if possible_columns.size == 0:
