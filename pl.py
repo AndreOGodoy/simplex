@@ -191,12 +191,14 @@ class PL:
             column = possible_columns[0]
             ratios = get_simplex_primal_ratio(canonical.restr[:, -1], canonical.restr[:, column])
             if np.all(ratios == np.inf):
+                solution, _ = get_basic_solution(canonical.restr[:, :-1], canonical.restr[:, -1])
+                certificate = canonical.__unlimited_certificate()
                 return SimplexReturn(pl_type=PLType.UNLIMITED,
-                                     certificate=np.array([0, 0, 0]))
+                                     solution=solution,
+                                     certificate=certificate)
 
             min_ratio_idx = np.where(ratios == np.min(ratios))[0][0]
             line = min_ratio_idx
-
             canonical.pivot_self_by(line, column)
 
     def into_canonical(self, base: Optional[np.ndarray] = None, inplace: bool = False, is_aux_pl: bool = False):
@@ -210,7 +212,7 @@ class PL:
             canonical = self
             if not inplace:
                 canonical = PL(self.n_rest, self.n_var, self.obj_func.copy(),
-                               self.restr.copy(), self.restr_type, self.obj_func_type)
+                               self.restr.copy(), self.restr_type, self.obj_func_type, self.op_reg)
 
             for i in range(self.n_rest):
                 canonical.pivot_self_by(i, self.n_var - self.n_rest + i)
@@ -241,11 +243,13 @@ class PL:
         obj_func = np.zeros(self.obj_func.shape[0] + n_ones)
         obj_func[-n_ones:] = -1
 
+        op_reg = self.op_reg
         restr = self.restr
 
         for line_idx, b in enumerate(restr[:, -1]):
             if b < 0:
                 restr[line_idx] *= -1
+                op_reg[line_idx] *= -1
 
         restr = np.hstack((restr, np.zeros((n_ones, n_ones))))
         restr[:, -1] = restr[:, self.n_var]
@@ -254,4 +258,55 @@ class PL:
         restr = restr + 0
         obj_func = obj_func + 0
 
-        return PL(self.n_rest, self.n_var + n_ones, obj_func, restr, RestrType.EQ)
+        pl = PL(self.n_rest, self.n_var + n_ones, obj_func, restr, RestrType.EQ)
+        pl.op_reg = op_reg + 0
+        return pl
+
+    def solve(self, debug_inplace: bool = False) -> SimplexReturn:
+        if debug_inplace:
+            pl_n_var = self.n_var
+            self.into_equality_form(inplace=True)
+            aux = self.get_aux_pl()
+            response = aux.primal_simplex(is_aux_pl=True)
+
+            if response.optimal_value != 0:
+                return SimplexReturn(PLType.INVIABLE,
+                                     response.certificate)
+
+            base = response.base[response.base <= self.n_var]
+            if base.size < self.n_rest:
+                columns = np.array(range(self.n_var))
+                columns_not_in_base = np.setdiff1d(np.union1d(columns, base), np.intersect1d(columns, base))
+                first_possible_idx = idx_first(self.obj_func[columns_not_in_base] >= 0)
+                first_possible = columns_not_in_base[first_possible_idx]
+                base += first_possible
+
+            response_2 = self.primal_simplex(base=base)
+            solution = response_2.solution[:pl_n_var] if response_2.solution is not None else None
+            return SimplexReturn(response_2.pl_type,
+                                 response_2.certificate[:pl_n_var],
+                                 response_2.optimal_value,
+                                 solution,
+                                 base)
+
+    def __unlimited_certificate(self) -> np.ndarray:
+        certificate = np.zeros(self.n_var)
+        identity = np.identity(self.n_rest)
+
+        target_column_idx = np.where((self.restr <= 0).all(axis=0))[0]
+        if target_column_idx.size == 0:
+            raise ValueError("Não é possível determinar coluna ilimitante")
+
+        target_column = self.restr.T[target_column_idx[0]]
+
+        for idx, col in enumerate(self.restr[:, :-1].T):
+            idx_in_base = np.where((identity == col).all(axis=1))[0]
+            if idx_in_base.size != 0:
+                pos = idx_in_base[0]
+                certificate[idx] = -target_column[pos]
+            elif (col != target_column).any():
+                certificate[idx] = 0
+            elif (col == target_column).all():
+                certificate[idx] = 1
+
+        return certificate

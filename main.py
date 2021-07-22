@@ -24,31 +24,25 @@ def read_input(input_file: str) -> PL:
 
     return pl
 
-
 def main():
     pl = read_input(INPUT_FILE)
     print(pl)
-    print('Original: ', pl.tableaux(), sep='\n')
+    result = pl.solve(debug_inplace=True)
 
-    pl_eq_form = pl.into_equality_form()
-    print('FPI: ', pl_eq_form.tableaux(), sep='\n')
+    if result.pl_type is PLType.OPTIMAL:
+        print('otima')
+        print(-result.optimal_value)
+        print(('{:g} '*result.solution.size).format(*result.solution))
+        print(('{:g} '*result.certificate.size).format(*-result.certificate + 0))
 
-    aux_pl = pl_eq_form.get_aux_pl()
-    print('Auxiliar: ', aux_pl.tableaux(), sep='\n')
+    elif result.pl_type is PLType.INVIABLE:
+        print('inviavel')
+        print(('{:g} '*result.certificate.size).format(*-result.certificate + 0))
 
-    response = aux_pl.primal_simplex(is_aux_pl=True)
-    print(response.pl_type, response.optimal_value, response.solution, response.base)
-
-    if response.optimal_value != 0:
-        print("A PL original é inviável")
-        sys.exit(0)
-
-    base = response.base[response.base <= pl_eq_form.n_var]
-
-    response_2 = pl_eq_form.primal_simplex(base=base)
-
-    solution = response_2.solution[:pl.n_var] if response_2.solution is not None else None
-    print(response_2.pl_type, response_2.optimal_value, solution, response_2.base)
+    elif result.pl_type is PLType.UNLIMITED:
+        print('ilimitada')
+        print(('{:g} '*result.solution.size).format(*result.solution))
+        print(('{:g} '*result.certificate.size).format(*result.certificate))
 
 
 if __name__ == '__main__':
