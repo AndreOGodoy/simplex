@@ -237,10 +237,9 @@ class PL:
     def solve(self, debug_inplace: bool = False) -> SimplexReturn:
         original_n_var = self.n_var
 
-        pl_eq: Optional['PL'] = None
+        pl_eq: Optional['PL'] = self
         if debug_inplace:
             self.into_equality_form(inplace=True)
-            pl_eq = self
         else:
             pl_eq = self.into_equality_form()
 
