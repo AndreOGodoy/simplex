@@ -1,10 +1,13 @@
 import sys
 
-import numpy as np
 from pl import *
 
 
-INPUT_FILE = 'input.txt'
+if len(sys.argv) == 1:
+    print("Erro: especifique um arquivo de entrada")
+    sys.exit(1)
+
+INPUT_FILE = sys.argv[1]
 
 
 def read_input(input_file: str) -> PL:
@@ -24,10 +27,10 @@ def read_input(input_file: str) -> PL:
 
     return pl
 
+
 def main():
     pl = read_input(INPUT_FILE)
-    print(pl)
-    result = pl.solve(debug_inplace=True)
+    result = pl.solve()
 
     if result.pl_type is PLType.OPTIMAL:
         print('otima')
