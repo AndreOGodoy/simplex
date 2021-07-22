@@ -37,34 +37,6 @@ def idx_first(cond_arr: np.ndarray) -> Optional[int]:
     return indexes[0][0] if indexes[0].size > 0 else None
 
 
-def get_simplex_primal_ratio(a: np.ndarray, b: np.ndarray):
-    divided = np.array([a_v / b_v if b_v > 0 else np.inf for a_v, b_v in zip(a, b)])
-    return divided
-
-
-def get_basic_solution(restr: np.ndarray, b: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
-    identity = np.identity(restr.shape[0])
-    solution = np.zeros(restr.shape[1])
-
-    indexes = []
-    order = []
-
-    for col_idx, col in enumerate(restr.T):
-        result = np.where((identity == col).all(axis=1))[0]
-        if result.size != 0:
-            solution[col_idx] = b[result[0]]
-
-            indexes.append(col_idx)
-            order.append(result[0])
-        else:
-            solution[col_idx] = 0
-
-    np_indexes = np.array(indexes)
-    np_order = np.array(order)
-    base = np_indexes[np_order]
-    return solution, np.unique(base)
-
-
 class PL:
     def __init__(self, n_rest: int, n_var: int,
                  obj_func: np.ndarray, restr: np.ndarray,
@@ -181,7 +153,7 @@ class PL:
         while True:
             possible_columns = np.where(canonical.obj_func > 0)[0]
             if possible_columns.size == 0:
-                solution, base = get_basic_solution(canonical.restr[:, :-1], canonical.restr[:, -1])
+                solution, base = canonical.get_basic_solution()
                 return SimplexReturn(pl_type=PLType.OPTIMAL,
                                      certificate=canonical.op_reg_c,
                                      optimal_value=canonical.optimal_value,
@@ -189,9 +161,9 @@ class PL:
                                      base=base)
 
             column = possible_columns[0]
-            ratios = get_simplex_primal_ratio(canonical.restr[:, -1], canonical.restr[:, column])
+            ratios = canonical.__get_simplex_primal_ratio(column)
             if np.all(ratios == np.inf):
-                solution, _ = get_basic_solution(canonical.restr[:, :-1], canonical.restr[:, -1])
+                solution, _ = canonical.get_basic_solution()
                 certificate = canonical.__unlimited_certificate()
                 return SimplexReturn(pl_type=PLType.UNLIMITED,
                                      solution=solution,
@@ -327,3 +299,34 @@ class PL:
                 certificate[idx] = 1
 
         return certificate
+
+    def get_basic_solution(self) -> Tuple[np.ndarray, np.ndarray]:
+        restr = self.restr[:, :-1]
+        b = self.restr[:, -1]
+
+        identity = np.identity(restr.shape[0])
+        solution = np.zeros(restr.shape[1])
+
+        indexes = []
+        order = []
+
+        for col_idx, col in enumerate(restr.T):
+            result = np.where((identity == col).all(axis=1))[0]
+            if result.size != 0:
+                solution[col_idx] = b[result[0]]
+
+                indexes.append(col_idx)
+                order.append(result[0])
+            else:
+                solution[col_idx] = 0
+
+        np_indexes = np.array(indexes)
+        np_order = np.array(order)
+        base = np_indexes[np_order]
+        return solution, np.unique(base)
+
+    def __get_simplex_primal_ratio(self, column: int) -> np.ndarray:
+        a = self.restr[:, -1]
+        b = self.restr[:, column]
+        divided = np.array([a_v / b_v if b_v > 0 else np.inf for a_v, b_v in zip(a, b)])
+        return divided
