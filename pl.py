@@ -126,7 +126,7 @@ class PL:
         new_pl = PL(self.n_rest, new_n_var, new_obj_func, new_restr, RestrType.EQ, ObjFuncType.MAX)
         return new_pl
 
-    def pivot_self_by(self, row_idx: int, col_idx: int, special_pivot: bool = False):
+    def pivot_self_by(self, row_idx: int, col_idx: int):
         self.op_reg[row_idx, :] = self.op_reg[row_idx, :] / self.restr[row_idx, col_idx]
         self.restr[row_idx, :] = self.restr[row_idx, :] / self.restr[row_idx, col_idx]
 
