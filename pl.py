@@ -59,9 +59,9 @@ def get_basic_solution(restr: np.ndarray, b: np.ndarray) -> Tuple[np.ndarray, np
         else:
             solution[col_idx] = 0
 
-    indexes = np.array(indexes)
-    order = np.array(order)
-    base = indexes[order]
+    np_indexes = np.array(indexes)
+    np_order = np.array(order)
+    base = np_indexes[np_order]
     return solution, np.unique(base)
 
 
@@ -127,7 +127,7 @@ class PL:
 
     def into_equality_form(self, inplace: bool = False) -> Optional['PL']:
         if self.restr_type is RestrType.EQ and inplace:
-            return
+            return None
         elif self.restr_type is RestrType.EQ and not inplace:
             return PL(self.n_rest, self.n_var, self.obj_func.copy(), self.restr.copy(),
                       self.restr_type, self.obj_func_type)
@@ -149,7 +149,7 @@ class PL:
             self.obj_func = new_obj_func
             self.restr_type = RestrType.EQ
             self.obj_func_type = ObjFuncType.MAX
-            return
+            return None
 
         new_pl = PL(self.n_rest, new_n_var, new_obj_func, new_restr, RestrType.EQ, ObjFuncType.MAX)
         return new_pl
@@ -265,12 +265,14 @@ class PL:
     def solve(self, debug_inplace: bool = False) -> SimplexReturn:
         original_n_var = self.n_var
 
+        pl_eq: Optional['PL'] = None
         if debug_inplace:
             self.into_equality_form(inplace=True)
             pl_eq = self
         else:
             pl_eq = self.into_equality_form()
 
+        assert pl_eq is not None
         aux = pl_eq.get_aux_pl()
         response = aux.primal_simplex(is_aux_pl=True)
 
@@ -278,6 +280,7 @@ class PL:
             return SimplexReturn(PLType.INVIABLE,
                                  response.certificate)
 
+        assert response.base is not None
         base = response.base[response.base <= pl_eq.n_var]
 
         if base.size < pl_eq.n_rest:
@@ -318,9 +321,9 @@ class PL:
             if idx_in_base.size != 0:
                 pos = idx_in_base[0]
                 certificate[idx] = -target_column[pos]
-            elif (col != target_column).any():
+            elif np.any(col != target_column):
                 certificate[idx] = 0
-            elif (col == target_column).all():
+            elif np.all(col == target_column):
                 certificate[idx] = 1
 
         return certificate
