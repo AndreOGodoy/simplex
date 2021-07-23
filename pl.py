@@ -137,16 +137,16 @@ class PL:
 
             ratio = row[col_idx] / pivot
 
-            self.restr[idx] -= ratio * self.restr[row_idx, :] + 0
-            self.op_reg[idx] -= ratio * self.op_reg[row_idx, :] + 0
+            self.restr[idx] -= ratio * self.restr[row_idx, :]
+            self.op_reg[idx] -= ratio * self.op_reg[row_idx, :]
 
         ratio = self.obj_func[col_idx] / pivot
-        self.obj_func -= ratio * self.restr[row_idx, :-1] + 0
-        self.op_reg_c -= ratio * self.op_reg[row_idx] + 0
-        self.optimal_value -= ratio * self.restr[row_idx, -1] + 0
+        self.obj_func -= ratio * self.restr[row_idx, :-1]
+        self.op_reg_c -= ratio * self.op_reg[row_idx]
+        self.optimal_value -= ratio * self.restr[row_idx, -1]
 
-        self.restr = self.restr + 0
-        self.obj_func = self.obj_func + 0
+        self.restr = self.restr
+        self.obj_func = self.obj_func
 
     def primal_simplex(self, base: Optional[np.ndarray] = None, is_aux_pl: bool = False) -> SimplexReturn:
         canonical = self.into_canonical(base=base, is_aux_pl=is_aux_pl)
@@ -162,14 +162,14 @@ class PL:
 
             column = possible_columns[0]
             ratios = canonical.__get_simplex_primal_ratio(column)
-            if np.all(ratios == np.inf):
+            if np.all(np.isclose(ratios, np.inf)):
                 solution, _ = canonical.get_basic_solution()
                 certificate = canonical.__unlimited_certificate()
                 return SimplexReturn(pl_type=PLType.UNLIMITED,
                                      solution=solution,
                                      certificate=certificate)
 
-            min_ratio_idx = np.where(ratios == np.min(ratios))[0][0]
+            min_ratio_idx = np.where(np.isclose(ratios, np.min(ratios)))[0][0]
             line = min_ratio_idx
             canonical.pivot_self_by(line, column)
 
@@ -227,15 +227,16 @@ class PL:
         restr[:, -1] = restr[:, self.n_var]
         restr[:, self.n_var: -1] = np.identity(self.n_rest)
 
-        restr = restr + 0
-        obj_func = obj_func + 0
+        restr = restr
+        obj_func = obj_func
 
         pl = PL(self.n_rest, self.n_var + n_ones, obj_func, restr, RestrType.EQ)
-        pl.op_reg = op_reg + 0
+        pl.op_reg = op_reg
         return pl
 
     def solve(self, debug_inplace: bool = False) -> SimplexReturn:
         original_n_var = self.n_var
+        original_n_rest = self.n_rest
 
         pl_eq: Optional['PL'] = self
         if debug_inplace:
@@ -247,7 +248,7 @@ class PL:
         aux = pl_eq.get_aux_pl()
         response = aux.primal_simplex(is_aux_pl=True)
 
-        if response.pl_type is PLType.OPTIMAL and response.optimal_value != 0:
+        if response.pl_type is PLType.OPTIMAL and not np.allclose(response.optimal_value, 0):
             return SimplexReturn(PLType.INVIABLE,
                                  response.certificate)
 
@@ -271,8 +272,11 @@ class PL:
             response_2 = pl_eq.primal_simplex(base=base)
 
         solution = response_2.solution[:original_n_var] if response_2.solution is not None else None
+        certificate = response_2.certificate[:original_n_rest] \
+            if response_2.pl_type is PLType.OPTIMAL else response_2.certificate[:original_n_var]
+
         return SimplexReturn(response_2.pl_type,
-                             response_2.certificate[:original_n_var],
+                             certificate,
                              response_2.optimal_value,
                              solution,
                              base)
@@ -310,7 +314,7 @@ class PL:
         order = []
 
         for col_idx, col in enumerate(restr.T):
-            result = np.where((identity == col).all(axis=1))[0]
+            result = np.where(np.isclose(identity, col).all(axis=1))[0]
             if result.size != 0:
                 solution[col_idx] = b[result[0]]
 

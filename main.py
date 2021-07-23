@@ -34,18 +34,18 @@ def main():
 
     if result.pl_type is PLType.OPTIMAL:
         print('otima')
-        print(-result.optimal_value)
-        print(('{:g} '*result.solution.size).format(*result.solution))
-        print(('{:g} '*result.certificate.size).format(*-result.certificate + 0))
+        print(round(-result.optimal_value, 7))
+        print(('{:.7f} '*result.solution.size).format(*result.solution))
+        print(('{:.7f} '*result.certificate.size).format(*-result.certificate + 0))
 
     elif result.pl_type is PLType.INVIABLE:
         print('inviavel')
-        print(('{:g} '*result.certificate.size).format(*-result.certificate + 0))
+        print(('{:.7f} '*result.certificate.size).format(*-result.certificate + 0))
 
     elif result.pl_type is PLType.UNLIMITED:
         print('ilimitada')
-        print(('{:g} '*result.solution.size).format(*result.solution))
-        print(('{:g} '*result.certificate.size).format(*result.certificate))
+        print(('{:.7f} '*result.solution.size).format(*result.solution))
+        print(('{:.7f} '*result.certificate.size).format(*result.certificate + 0))
 
 
 if __name__ == '__main__':
