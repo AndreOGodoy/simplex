@@ -151,7 +151,7 @@ class PL:
     def primal_simplex(self, base: Optional[np.ndarray] = None, is_aux_pl: bool = False) -> SimplexReturn:
         canonical = self.into_canonical(base=base, is_aux_pl=is_aux_pl)
         while True:
-            possible_columns = np.where(canonical.obj_func > 0)[0]
+            possible_columns = np.where(np.round(canonical.obj_func) > 0)[0]
             if possible_columns.size == 0:
                 solution, base = canonical.get_basic_solution()
                 return SimplexReturn(pl_type=PLType.OPTIMAL,
@@ -247,7 +247,7 @@ class PL:
         aux = pl_eq.get_aux_pl()
         response = aux.primal_simplex(is_aux_pl=True)
 
-        if response.optimal_value != 0:
+        if response.pl_type is PLType.OPTIMAL and response.optimal_value != 0:
             return SimplexReturn(PLType.INVIABLE,
                                  response.certificate)
 
