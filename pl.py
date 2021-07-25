@@ -153,7 +153,7 @@ class PL:
     def primal_simplex(self, base: Optional[np.ndarray] = None, is_aux_pl: bool = False) -> SimplexReturn:
         canonical = self.into_canonical(base=base, is_aux_pl=is_aux_pl)
         while True:
-            possible_columns = np.where(np.round(canonical.obj_func) > 0)[0]
+            possible_columns = np.where(np.round(canonical.obj_func, 7) > 0)[0]
             if possible_columns.size == 0:
                 solution, base = canonical.get_basic_solution()
                 return SimplexReturn(pl_type=PLType.OPTIMAL,
