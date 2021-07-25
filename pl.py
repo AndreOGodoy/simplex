@@ -160,7 +160,8 @@ class PL:
                                      certificate=canonical.op_reg_c,
                                      optimal_value=canonical.optimal_value,
                                      solution=solution,
-                                     base=base)
+                                     base=base,
+                                     obj_func=canonical.obj_func)
 
             column = possible_columns[0]
             ratios = canonical.__get_simplex_primal_ratio(column)
@@ -263,10 +264,11 @@ class PL:
 
             if debug_inplace:
                 pl_eq = self
-            first_possible_idx = idx_first(pl_eq.obj_func[columns_not_in_base] >= 0)
+
+            first_possible_idx = idx_first(response.obj_func[columns_not_in_base] < 0)
 
             first_possible = columns_not_in_base[first_possible_idx]
-            base += first_possible
+            base = np.hstack((base, first_possible))
 
         if debug_inplace:
             response_2 = self.primal_simplex(base=base)
