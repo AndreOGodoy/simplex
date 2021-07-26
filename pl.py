@@ -157,9 +157,6 @@ class PL:
         self.op_reg_c -= ratio * self.op_reg[row_idx]
         self.optimal_value -= ratio * self.restr[row_idx, -1]
 
-        self.restr = self.restr
-        self.obj_func = self.obj_func
-
     def primal_simplex(self, base: Optional[np.ndarray] = None, is_aux_pl: bool = False) -> SimplexReturn:
         canonical = self.into_canonical(base=base, is_aux_pl=is_aux_pl)
 
@@ -254,11 +251,7 @@ class PL:
         restr[:, -1] = restr[:, self.n_var]
         restr[:, self.n_var: -1] = np.identity(self.n_rest)
 
-        restr = restr
-        obj_func = obj_func
-
-        pl = PL(self.n_rest, self.n_var + n_ones, obj_func, restr, RestrType.EQ)
-        pl.op_reg = op_reg
+        pl = PL(self.n_rest, self.n_var + n_ones, obj_func, restr, RestrType.EQ, self.obj_func_type, op_reg)
         return pl
 
     def solve(self, debug_inplace: bool = False) -> SimplexReturn:
