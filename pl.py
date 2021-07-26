@@ -8,7 +8,7 @@ class PLType(Enum):
     INVIABLE = auto(),
     UNLIMITED = auto()
 
-
+# Classe de retorno que contém informações sobre PL's resolvidas.
 class SimplexReturn:
     def __init__(self, pl_type: PLType,
                  certificate: np.ndarray,
@@ -108,13 +108,17 @@ class PL:
 
         new_obj_func = np.append(self.obj_func, [0] * self.n_rest)
 
+        # Transforma uma PL com função objetivo MIN em uma PL com função objetivo MAX
         if self.obj_func_type is ObjFuncType.MIN:
             new_obj_func *= -1
 
+        # Adiciona matriz identidade à direita das restrições originais para representar
+        # as variáveis de folga adicionadas
         new_restr = np.hstack((self.restr, np.zeros((self.n_rest, self.n_rest))))
         new_restr[:, -1] = new_restr[:, self.n_var]
         new_restr[:, self.n_var: -1] = np.identity(self.n_rest)
 
+        # Contabiliza as variáveis de folga adicionadas (1 para cada restrição original)
         new_n_var = self.n_var + self.n_rest
 
         if inplace:
@@ -129,9 +133,11 @@ class PL:
         return new_pl
 
     def pivot_self_by(self, row_idx: int, col_idx: int):
+        # Divide a linha do pivô para transformá-lo em 1, repete a operação na VERO
         self.op_reg[row_idx, :] = self.op_reg[row_idx, :] / self.restr[row_idx, col_idx]
         self.restr[row_idx, :] = self.restr[row_idx, :] / self.restr[row_idx, col_idx]
 
+        # Opera sobre as demais linhas que não do pivô
         pivot = self.restr[row_idx, col_idx]
         for idx, row in enumerate(self.restr):
             if idx == row_idx:
@@ -140,8 +146,11 @@ class PL:
             ratio = row[col_idx] / pivot
 
             self.restr[idx] -= ratio * self.restr[row_idx, :]
+
+            # Espelha operações na VERO
             self.op_reg[idx] -= ratio * self.op_reg[row_idx, :]
 
+        # Opera sobre demais valores, fora da matriz self.restr
         ratio = self.obj_func[col_idx] / pivot
         self.obj_func -= ratio * self.restr[row_idx, :-1]
         self.op_reg_c -= ratio * self.op_reg[row_idx]
@@ -152,7 +161,12 @@ class PL:
 
     def primal_simplex(self, base: Optional[np.ndarray] = None, is_aux_pl: bool = False) -> SimplexReturn:
         canonical = self.into_canonical(base=base, is_aux_pl=is_aux_pl)
+
+        # O algoritmo para apenas quando uma das duas condições de parada delimitadas pelos if
+        # abaixo são alcançadas. São sempre alcançadas.
         while True:
+
+            # Escolhe a coluna como sendo a primeira com entrada > 0
             possible_columns = np.where(np.round(canonical.obj_func, 7) > 0)[0]
             if possible_columns.size == 0:
                 solution, base = canonical.get_basic_solution()
@@ -164,6 +178,8 @@ class PL:
                                      obj_func=canonical.obj_func)
 
             column = possible_columns[0]
+
+            # Obtém as razões b / coluna. Se algum b_i da coluna for <= 0, então a razão vale np.inf
             ratios = canonical.__get_simplex_primal_ratio(column)
             if np.all(np.isclose(ratios, np.inf)):
                 solution, _ = canonical.get_basic_solution()
@@ -172,6 +188,7 @@ class PL:
                                      solution=solution,
                                      certificate=certificate)
 
+            # Escolhe o pivô como sendo o primeiro elemento de menor razão
             min_ratio_idx = np.where(np.isclose(ratios, np.min(ratios)))[0][0]
             line = min_ratio_idx
             canonical.pivot_self_by(line, column)
@@ -189,6 +206,8 @@ class PL:
                 canonical = PL(self.n_rest, self.n_var, self.obj_func.copy(),
                                self.restr.copy(), self.restr_type, self.obj_func_type, self.op_reg)
 
+            # No caso de uma PL auxiliar, realiza-se um pivoteamento especial, onde as variáveis artificiais
+            # são pivôs e utilizadas para zerar os valores do vetor objetivo em suas respectivas coluinas
             for i in range(self.n_rest):
                 canonical.pivot_self_by(i, self.n_var - self.n_rest + i)
 
@@ -213,19 +232,23 @@ class PL:
         if self.restr_type is not RestrType.EQ:
             raise ValueError("A PL deve estar em forma de igualdades antes de se obter sua auxiliar")
 
+        # Adiciona N -1's no vetor C, onde N = número de restrições da PL
         n_ones = self.n_rest
-
         obj_func = np.zeros(self.obj_func.shape[0] + n_ones)
         obj_func[-n_ones:] = -1
 
         op_reg = self.op_reg
         restr = self.restr
 
+        # Faz com que b >= 0. Reflete operações na matriz VERO
         for line_idx, b in enumerate(restr[:, -1]):
             if b < 0:
                 restr[line_idx] *= -1
                 op_reg[line_idx] *= -1
 
+        # Adiciona uma matriz identidade lado da matriz de restrições original,
+        # de tamanho N x N, onde N = número de -1's adicionadas anteriormente,
+        # ou, equivalentemente, N = número de restrições da PL
         restr = np.hstack((restr, np.zeros((n_ones, n_ones))))
         restr[:, -1] = restr[:, self.n_var]
         restr[:, self.n_var: -1] = np.identity(self.n_rest)
@@ -256,8 +279,11 @@ class PL:
                                  response.certificate)
 
         assert response.base is not None
+        # Trunca a base para que esteja de tamanho compatível com a PL original em forma de igualdades
         base = response.base[response.base <= pl_eq.n_var]
 
+        # Caso a base não esteja completa, adiciona primeira coluna da PL original
+        # que possua entrada < 0 e que não esteja contida na base
         if base.size < pl_eq.n_rest:
             columns = np.array(range(pl_eq.n_var))
             columns_not_in_base = np.setdiff1d(np.union1d(columns, base), np.intersect1d(columns, base))
@@ -276,6 +302,10 @@ class PL:
             response_2 = pl_eq.primal_simplex(base=base)
 
         solution = response_2.solution[:original_n_var] if response_2.solution is not None else None
+
+        # Caso o certificado seja se otimalidade, o trunca em relação ao número de restrições da PL original.
+        # Caso contrário, o mesmo será de ilimitabilidade, e deve ser truncado em relação ao número de variáveis
+        # da PL original
         certificate = response_2.certificate[:original_n_rest] \
             if response_2.pl_type is PLType.OPTIMAL else response_2.certificate[:original_n_var]
 
@@ -289,12 +319,20 @@ class PL:
         certificate = np.zeros(self.n_var)
         identity = np.identity(self.n_rest)
 
+        # Identifica a coluna da matriz de restrições que indica que a PL é ilimitada.
+        # No caso, uma coluna cuja todas as entradas são não-positivas.
         target_column_idx = np.where((self.restr <= 0).all(axis=0))[0]
         if target_column_idx.size == 0:
             raise ValueError("Não é possível determinar coluna ilimitante")
 
         target_column = self.restr.T[target_column_idx[0]]
 
+        # Monta o certificado seguindo a lógica:
+        #   Passa por cada coluna de A fazendo o seguinte:
+        #       Adiciona o valor -c ao certificado caso a coluna seja uma base,
+        #           onde c = valor contido na mesma linha que o 1 da coluna-base na coluna-alvo
+        #       Adiciona o valor 1 ao certificado caso a coluna seja a coluna-alvo
+        #       Adiciona o valor 0 caso a coluna não esteja não seja básica nem alvo
         for idx, col in enumerate(self.restr[:, :-1].T):
             idx_in_base = np.where((identity == col).all(axis=1))[0]
             if idx_in_base.size != 0:
@@ -317,6 +355,8 @@ class PL:
         indexes = []
         order = []
 
+        # Constrói uma solução básica para a PL, verificando quais os valores de b
+        # correspondem às colunas da base. Leva em consideração a ordem das colunas
         for col_idx, col in enumerate(restr.T):
             result = np.where(np.isclose(identity, col).all(axis=1))[0]
             if result.size != 0:
@@ -330,6 +370,8 @@ class PL:
         np_indexes = np.array(indexes)
         np_order = np.array(order)
         base = np_indexes[np_order]
+
+        # Retorna também uma base, composta pelo primeiro conjunto de colunas básicas encontrado.
         return solution, np.unique(base)
 
     def __get_simplex_primal_ratio(self, column: int) -> np.ndarray:
