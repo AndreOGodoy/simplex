@@ -8,6 +8,7 @@ class PLType(Enum):
     INVIABLE = auto(),
     UNLIMITED = auto()
 
+
 # Classe de retorno que contém informações sobre PL's resolvidas.
 class SimplexReturn:
     def __init__(self, pl_type: PLType,
@@ -207,7 +208,7 @@ class PL:
                                self.restr.copy(), self.restr_type, self.obj_func_type, self.op_reg)
 
             # No caso de uma PL auxiliar, realiza-se um pivoteamento especial, onde as variáveis artificiais
-            # são pivôs e utilizadas para zerar os valores do vetor objetivo em suas respectivas coluinas
+            # são pivôs e utilizadas para zerar os valores do vetor objetivo em suas respectivas colunas
             for i in range(self.n_rest):
                 canonical.pivot_self_by(i, self.n_var - self.n_rest + i)
 
