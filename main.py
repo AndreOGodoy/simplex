@@ -1,35 +1,21 @@
-import sys
-
 from pl import *
 
 
-if len(sys.argv) == 1:
-    print("Erro: especifique um arquivo de entrada")
-    sys.exit(1)
+def read_input() -> PL:
+    n, m = map(int, input().split())
+    obj_func = np.array(input().split(), dtype=float)
 
-INPUT_FILE = sys.argv[1]
+    restr = np.empty(shape=(n, m+1))
+    for idx in range(n):
+        restr[idx, :] = np.array(input().split(), dtype=float)
 
-
-def read_input(input_file: str) -> PL:
-    with open(input_file) as f:
-        line_0 = f.readline()
-        n, m = map(int, line_0.split())
-
-        line_1 = f.readline()
-        obj_func = np.array(line_1.split(), dtype=float)
-
-        # Matriz de restrições
-        restr = np.empty(shape=(n, m+1))
-        for idx, line in enumerate(f.readlines()):
-            restr[idx, :] = line.replace('\n', '').split()
-
-        pl = PL(n, m, obj_func, restr)
+    pl = PL(n, m, obj_func, restr)
 
     return pl
 
 
 def main():
-    pl = read_input(INPUT_FILE)
+    pl = read_input()
     result = pl.solve()
 
     if result.pl_type is PLType.OPTIMAL:
