@@ -373,3 +373,23 @@ class PL:
         b = self.restr[:, column]
         divided = np.array([a_v / b_v if b_v > 0 else np.inf for a_v, b_v in zip(a, b)])
         return divided
+
+
+def formata_certificado(certificate: np.ndarray) -> str:
+    output = ''
+    rounded_cert = np.round(certificate, 7)
+    for item in rounded_cert:
+        output += f'{np.abs(item):g} '
+    return output
+
+
+def formata_solucao(solution: np.ndarray) -> str:
+    output = ''
+    rounded_solution = np.round(solution, 7)
+    for item in rounded_solution:
+        output += f'{item:g} '
+    return output
+
+
+def formata_valor_otimo(valor_otimo: float) -> str:
+    return f'{-valor_otimo:g}'
